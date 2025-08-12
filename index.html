@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cell Distribuciones</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 0; background: #f8f8f8; }
+header { background: white; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+header h1 { margin: 0; font-size: 24px; }
+header p { margin: 4px 0 0; font-size: 14px; color: gray; }
+#search { width: 100%; padding: 10px; font-size: 16px; margin: 20px 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.card { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.card h3 { font-size: 14px; margin: 0 0 6px; }
+.card p { margin: 0; font-size: 12px; color: gray; }
+.card .price { font-weight: bold; margin-top: 8px; font-size: 16px; }
+button { margin-top: 8px; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; }
+.add { background: #2563eb; color: white; }
+.view { background: #ddd; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cell Distribuciones</h1>
+  <p>Ayacucho 2186, N3300 Posadas, Misiones</p>
+  <a href="https://wa.me/54903764855861" target="_blank">WhatsApp</a>
+</header>
+<main style="max-width:1000px;margin:auto;padding:20px;">
+  <input type="text" id="search" placeholder="Buscar producto...">
+  <div id="products" class="grid"></div>
+</main>
+<script>
+let productsData = [];
+fetch('public/products.json')
+  .then(r=>r.json())
+  .then(data=>{
+    productsData = data;
+    render(productsData);
+  });
+document.getElementById('search').addEventListener('input', e=>{
+  const q = e.target.value.toLowerCase();
+  const filtered = productsData.filter(p=>p.nombre.toLowerCase().includes(q));
+  render(filtered);
+});
+function render(list){
+  const cont = document.getElementById('products');
+  cont.innerHTML = '';
+  list.forEach(p=>{
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `<h3>${p.nombre}</h3>
+                     <p>${p.categoria}</p>
+                     <div class="price">$${p.precio_final.toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>
+                     ${Math.random()>0.5 ? '<button class="add">Agregar al carrito</button>' : '<button class="view">Ver foto</button>'}`;
+    cont.appendChild(div);
+  });
+}
+</script>
+</body>
+</html>
