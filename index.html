@@ -1,61 +1,237 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Cell Distribuciones</title>
 <style>
-body { font-family: Arial, sans-serif; margin: 0; background: #f8f8f8; }
-header { background: white; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-header h1 { margin: 0; font-size: 24px; }
-header p { margin: 4px 0 0; font-size: 14px; color: gray; }
-#search { width: 100%; padding: 10px; font-size: 16px; margin: 20px 0; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-.card { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-.card h3 { font-size: 14px; margin: 0 0 6px; }
-.card p { margin: 0; font-size: 12px; color: gray; }
-.card .price { font-weight: bold; margin-top: 8px; font-size: 16px; }
-button { margin-top: 8px; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; }
-.add { background: #2563eb; color: white; }
-.view { background: #ddd; }
+  :root{--max:1000px}
+  body{font-family:Arial, sans-serif;margin:0;background:#f8f8f8;color:#111}
+  header{background:#fff;padding:20px;box-shadow:0 2px 4px rgba(0,0,0,.08)}
+  header h1{margin:0;font-size:24px}
+  header p{margin:4px 0 0;font-size:14px;color:#666}
+  header a{display:inline-block;margin-top:8px;text-decoration:none}
+  main{max-width:var(--max);margin:auto;padding:20px}
+  /* buscador */
+  #search{width:100%;padding:12px 14px;font-size:16px;border:1px solid #ddd;border-radius:10px;margin:18px 0;outline:none;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  /* categorías */
+  #categories{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 18px}
+  .chip{padding:8px 12px;border:1px solid #ddd;border-radius:999px;background:#fff;cursor:pointer;font-size:14px}
+  .chip.active{background:#111;color:#fff;border-color:#111}
+  /* grilla */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+  .card{background:#fff;padding:12px;border-radius:12px;box-shadow:0 2px 4px rgba(0,0,0,.06);display:flex;flex-direction:column}
+  .thumb{height:160px;border-radius:10px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
+  .thumb img{max-height:100%;max-width:100%;object-fit:contain}
+  .noimg{font-size:12px;color:#777}
+  h3{font-size:14px;margin:10px 0 4px;line-height:1.25}
+  .cat{font-size:12px;color:#666;margin:0}
+  .price{margin-top:8px;font-weight:700;font-size:16px}
+  .actions{margin-top:10px}
+  .btn{padding:8px 10px;border:none;border-radius:8px;background:#2563eb;color:#fff;cursor:pointer}
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .modal.open{display:flex}
+  .modal-card{background:#fff;max-width:min(900px,95vw);width:100%;border-radius:12px;overflow:hidden;display:grid;grid-template-columns:1fr 1fr}
+  .modal-media{background:#fafafa;display:flex;align-items:center;justify-content:center;padding:20px}
+  .modal-media img{max-width:100%;max-height:70vh;object-fit:contain}
+  .modal-body{padding:18px}
+  .modal-body h2{margin:0 0 6px;font-size:18px}
+  .modal-body .meta{color:#666;font-size:13px;margin-bottom:10px}
+  .modal-body .mprice{font-weight:700;margin:10px 0 14px}
+  .modal-body h3{margin:14px 0 8px;font-size:14px}
+  .modal-close{position:absolute;top:10px;right:14px;background:transparent;border:none;font-size:24px;cursor:pointer}
+  @media(max-width:760px){.modal-card{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header>
-  <h1>Cell Distribuciones</h1>
-  <p>Ayacucho 2186, N3300 Posadas, Misiones</p>
-  <a href="https://wa.me/54903764855861" target="_blank">WhatsApp</a>
-</header>
-<main style="max-width:1000px;margin:auto;padding:20px;">
-  <input type="text" id="search" placeholder="Buscar producto...">
-  <div id="products" class="grid"></div>
-</main>
+  <header>
+    <h1>Cell Distribuciones</h1>
+    <p>Ayacucho 2186, N3300 Posadas, Misiones</p>
+    <a href="https://wa.me/54903764855861" target="_blank" rel="noopener">WhatsApp</a>
+  </header>
+
+  <main>
+    <input type="text" id="search" placeholder="Buscar producto..." />
+    <div id="categories"></div>
+    <div id="products" class="grid"></div>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true">
+      <button class="modal-close" id="modalClose" aria-label="Cerrar">×</button>
+      <div class="modal-media" id="modalMedia"></div>
+      <div class="modal-body">
+        <h2 id="mTitle"></h2>
+        <div class="meta" id="mCat"></div>
+        <div class="mprice" id="mPrice"></div>
+        <h3>Características</h3>
+        <div id="mSpecs" style="font-size:14px;white-space:pre-wrap"></div>
+        <div style="margin-top:16px">
+          <button class="btn" id="mAdd">Agregar al carrito</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <script>
-let productsData = [];
-fetch('products.json')
-  .then(r=>r.json())
-  .then(data=>{
-    productsData = data;
-    render(productsData);
+  // Estado
+  let PRODUCTS = [];
+  let query = '';
+  let activeCat = 'Todas';
+
+  // Cargar JSON
+  fetch('products.json')
+    .then(r => r.json())
+    .then(data => {
+      PRODUCTS = Array.isArray(data) ? data : [];
+      buildCategories(PRODUCTS);
+      render();
+    });
+
+  // Buscar
+  document.getElementById('search').addEventListener('input', e => {
+    query = e.target.value.toLowerCase();
+    render();
   });
-document.getElementById('search').addEventListener('input', e=>{
-  const q = e.target.value.toLowerCase();
-  const filtered = productsData.filter(p=>p.nombre.toLowerCase().includes(q));
-  render(filtered);
-});
-function render(list){
-  const cont = document.getElementById('products');
-  cont.innerHTML = '';
-  list.forEach(p=>{
-    const div = document.createElement('div');
-    div.className = 'card';
-    div.innerHTML = `<h3>${p.nombre}</h3>
-                     <p>${p.categoria}</p>
-                     <div class="price">$${p.precio_final.toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>
-                     ${Math.random()>0.5 ? '<button class="add">Agregar al carrito</button>' : '<button class="view">Ver foto</button>'}`;
-    cont.appendChild(div);
-  });
-}
+
+  // Construir barra de categorías
+  function buildCategories(items){
+    const cats = Array.from(new Set(items.map(p => (p.categoria || '').trim()).filter(Boolean)));
+    const cont = document.getElementById('categories');
+    cont.innerHTML = '';
+    const all = document.createElement('button');
+    all.textContent = 'Todas';
+    all.className = 'chip ' + (activeCat === 'Todas' ? 'active' : '');
+    all.onclick = () => { activeCat = 'Todas'; render(); markActive(); };
+    cont.appendChild(all);
+    cats.sort().forEach(c => {
+      const b = document.createElement('button');
+      b.textContent = c || 'Sin categoría';
+      b.className = 'chip ' + (activeCat === c ? 'active' : '');
+      b.dataset.cat = c;
+      b.onclick = () => { activeCat = c; render(); markActive(); };
+      cont.appendChild(b);
+    });
+    function markActive(){
+      [...cont.querySelectorAll('.chip')].forEach(el=>{
+        el.classList.toggle('active', el.textContent === activeCat);
+      });
+    }
+  }
+
+  // Filtrar y renderizar
+  function getFiltered(){
+    return PRODUCTS
+      .filter(p => activeCat === 'Todas' ? true : (String(p.categoria||'') === activeCat))
+      .filter(p => !query ? true : String(p.nombre||'').toLowerCase().includes(query));
+  }
+
+  function render(){
+    const list = getFiltered();
+    const cont = document.getElementById('products');
+    cont.innerHTML = '';
+    list.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      // Miniatura / imagen
+      const th = document.createElement('div');
+      th.className = 'thumb';
+      if(p.imagen){
+        const img = document.createElement('img');
+        img.src = p.imagen;
+        img.alt = p.nombre || 'Producto';
+        img.onclick = () => openModal(p);
+        th.appendChild(img);
+      } else {
+        // Sin imagen: bloque gris clickeable para modal (por si hay características)
+        const span = document.createElement('span');
+        span.className = 'noimg';
+        span.textContent = 'Sin imagen';
+        th.onclick = () => openModal(p);
+        th.appendChild(span);
+      }
+
+      // Texto
+      const title = document.createElement('h3');
+      title.textContent = p.nombre || '';
+
+      const cat = document.createElement('p');
+      cat.className = 'cat';
+      cat.textContent = p.categoria || '';
+
+      const price = document.createElement('div');
+      price.className = 'price';
+      const n = Number(p.precio_final || 0);
+      price.textContent = '$' + n.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+      // Acciones (siempre Agregar al carrito)
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn';
+      addBtn.textContent = 'Agregar al carrito';
+      addBtn.onclick = () => addToCart(p);
+      actions.appendChild(addBtn);
+
+      card.appendChild(th);
+      card.appendChild(title);
+      card.appendChild(cat);
+      card.appendChild(price);
+      card.appendChild(actions);
+      cont.appendChild(card);
+    });
+  }
+
+  // Carrito simple (demo en memoria + contador en consola)
+  const CART = [];
+  function addToCart(p){
+    CART.push({id:p.id, qty:1});
+    console.log('Carrito:', CART.length, 'items');
+    // Podés reemplazar esto luego por localStorage o un backend
+  }
+
+  // Modal
+  const modal = document.getElementById('modal');
+  const modalMedia = document.getElementById('modalMedia');
+  const mTitle = document.getElementById('mTitle');
+  const mCat = document.getElementById('mCat');
+  const mPrice = document.getElementById('mPrice');
+  const mSpecs = document.getElementById('mSpecs');
+  const mAdd = document.getElementById('mAdd');
+
+  function openModal(p){
+    modalMedia.innerHTML = '';
+    if(p.imagen){
+      const img = document.createElement('img');
+      img.src = p.imagen;
+      img.alt = p.nombre || 'Producto';
+      modalMedia.appendChild(img);
+    } else {
+      modalMedia.innerHTML = '<div class="noimg">Sin imagen</div>';
+    }
+    mTitle.textContent = p.nombre || '';
+    mCat.textContent = p.categoria ? 'Categoría: '+p.categoria : '';
+    const n = Number(p.precio_final || 0);
+    mPrice.textContent = 'Precio: $' + n.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+    // características: puede ser string o array en products.json
+    const spec = (p.caracteristicas ?? '').toString().trim();
+    mSpecs.textContent = spec ? spec : 'Aún sin características.';
+
+    mAdd.onclick = () => addToCart(p);
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+  }
+  function closeModal(){
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden','true');
+  }
+  document.getElementById('modalClose').onclick = closeModal;
+  modal.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
 </script>
 </body>
 </html>
